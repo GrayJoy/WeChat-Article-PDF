@@ -31,7 +31,7 @@ end
 
 
 def perform
-	# 首先根据URL，拿到最初10个文章的URL unfinished!
+	# 首先根据URL，拿到最初10个文章的URL finished!
 	get_first_10_urls
 
 	# 通过请求，获取json，拿到剩余所有文章的URL
@@ -44,33 +44,29 @@ end
 
 
 # 首先根据URL，拿到最初10个文章的URL
-def get_first_10_urls
+def get_first_10_urls(url)
 	# url = 'https://mp.weixin.qq.com/mp/getmasssendmsg?__biz=MzI0MjA1Mjg2Ng==&uin=MzMwNTQ4MjU1&key=18e81ac7415f67c475e0d7081758c96fdfe7c19e936c676815d85a2424eb57b670f9e5eaf11e610f4890dba86b9c3942&devicetype=iMac+MacBookPro12%2C1+OSX+OSX+10.10.5+build(14F1808)&version=11020201&lang=zh_CN&pass_ticket=xm7%2FNvvPV6xCkFxqZVH0kMPE2nZKbzbhVlht8sy%2BMiwZvz6%2FA%2FXUjrXPU%2BdA6RiP#wechat_webview_type=1'
-	# 这个URL越发难拿到了，现在的做法是，分享给传输助手，到网页版微信查看消息，打开chrome网页调试工具，查看消息内存的URL。
+	# 这个URL越发难拿到了，现在的做法是，从微信号历史消息页分享给传输助手，到网页版微信查看消息，打开chrome网页调试工具，查看消息内存的URL。
+	# （注意，如果直接从传输助手，转发给传输助手，URL里面参数是会过期的）也就是分享之后URL已经固定了，只是客户端里打开又都删减了URL
 	# ** 只有关注公众号的用户，才能获取更多消息，否则只能看前十条
-
-
-	# html_data = open(url, "Accept-Encoding" => "plain")	# ruby版本高于1.9之后，就要说明encoding
+	url_array = []
+	html_data = open(url, "Accept-Encoding" => "plain")	# ruby版本高于1.9之后，就要说明encoding
 
 	# 直接打开网页时，nokogiri没有拿到所有文件，为什么？
 	# 原来此网页是js动态渲染HTML。type：1（纯文字），3（图片），34（音频），49（图文/多图文），62（视频）
 
-	# 所以只能把html文件下到本地然后打开了
-	# TODO 不使用HTML文件，单纯使用URL来做
-	html_data = File.open("his.html")
+	# html_data = File.open("his.html")
 	nokogiri_obj = Nokogiri::HTML(html_data)
-
-	elements = nokogiri_obj.xpath("//div[@class='msg_inner_wrapper default_box news_box']/a")
-	url_array = []
-
-	elements.each do |e|
-		article_url = e.attributes["hrefs"].value
-		puts article_url
-		url_array << article_url
+	data_str = nokogiri_obj.to_s
+	# elements = nokogiri_obj.xpath("//div[@class='msg_inner_wrapper default_box news_box']/a")
+	raw_url_array = data_str.gsub(/&quot/, '"').scan(/(mp.weixin.qq.com[\S]{1,}?wechat_redirect)/)
+	raw_url_array.each do |raw_url|
+		url = "http://#{raw_url[0].gsub(/\\\\/, '').gsub(/amp;amp;/, '')}"
+		puts url
+		url_array << url
 	end
-
 	puts url_array
-	@last_msgid = '?'
+	@last_msgid = data_str.scan(/comm_msg_info(.*?)type/).last.first.match(/[\d]{1,}/).to_s
 end
 
 
@@ -89,7 +85,7 @@ def get_next_urls
 		msg_num = result['general_msg_list']['list'].length
 		(0..(msg_num - 1)).each do |index|
 			url_array << result['general_msg_list']['list'][index].try(:[], 'app_msg_ext_info').try(:[], 'content_url')
-			# 有个问题，如果是纯图片消息，就是result['general_msg_list']['list'][index]['image_msg_ext_info'] ——当然，这里没有有效消息
+			# 有个问题，如果是纯图片消息，就是result['general_msg_list']['list'][index]['image_msg_ext_info'] ——当然，json里没有关于图片的有效消息
 			# 实际上，纯图片消息里面的图片URL，也是用现有参数是可以拼出来的
 		end
 	end
