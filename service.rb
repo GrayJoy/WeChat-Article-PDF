@@ -8,9 +8,7 @@ require 'cgi'
 
 
 =begin
-保留第一个biz参数，后面换成，#wechat_webview_type=1&wechat_redirect，就获得了永久有效的历史消息链接。
-其实在微信订阅号，打开历史消息，复制链接，就是这个URL
-（实际上应该是，在微信点开这个新链接时，都会自动再生成可用的链接）
+历史消息URL（最简版本，只能在微信内打开）
 'https://mp.weixin.qq.com/mp/getmasssendmsg?__biz=MzI0MjA1Mjg2Ng==#wechat_webview_type=1&wechat_redirect'
 
 
@@ -47,14 +45,15 @@ end
 
 # 首先根据URL，拿到最初10个文章的URL
 def get_first_10_urls
-	# ruby版本高于1.9之后，就要说明encoding
 	# url = 'https://mp.weixin.qq.com/mp/getmasssendmsg?__biz=MzI0MjA1Mjg2Ng==&uin=MzMwNTQ4MjU1&key=18e81ac7415f67c475e0d7081758c96fdfe7c19e936c676815d85a2424eb57b670f9e5eaf11e610f4890dba86b9c3942&devicetype=iMac+MacBookPro12%2C1+OSX+OSX+10.10.5+build(14F1808)&version=11020201&lang=zh_CN&pass_ticket=xm7%2FNvvPV6xCkFxqZVH0kMPE2nZKbzbhVlht8sy%2BMiwZvz6%2FA%2FXUjrXPU%2BdA6RiP#wechat_webview_type=1'
-	#
+	# 这个URL越发难拿到了，现在的做法是，分享给传输助手，到网页版微信查看消息，打开chrome网页调试工具，查看消息内存的URL。
+	# ** 只有关注公众号的用户，才能获取更多消息，否则只能看前十条
 
-	# html_data = open(url, "Accept-Encoding" => "plain")
+
+	# html_data = open(url, "Accept-Encoding" => "plain")	# ruby版本高于1.9之后，就要说明encoding
 
 	# 直接打开网页时，nokogiri没有拿到所有文件，为什么？
-	# 原来是，HTML代码body内容全写在<script>里面，是js动态渲染HTML。可能有的type：1（纯文字），3（图片），34（音频），49（图文），else（多条图文）
+	# 原来此网页是js动态渲染HTML。type：1（纯文字），3（图片），34（音频），49（图文/多图文），62（视频）
 
 	# 所以只能把html文件下到本地然后打开了
 	# TODO 不使用HTML文件，单纯使用URL来做
