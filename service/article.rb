@@ -75,8 +75,8 @@ module Service
         update_last_msgid result
         msg_num = result['general_msg_list']['list'].length
         (0..(msg_num - 1)).each do |index|
-        	# 有个问题，如果是纯图片消息，就是result['general_msg_list']['list'][index]['image_msg_ext_info'] ——当然，json里没有关于图片的有效消息
-        	# 实际上，纯图片消息里面的图片URL，也是用现有参数是可以拼出来的
+          # 有个问题，如果是纯图片消息，就是result['general_msg_list']['list'][index]['image_msg_ext_info'] ——当然，json里没有关于图片的有效消息
+          # 实际上，纯图片消息里面的图片URL，也是用现有参数是可以拼出来的
           msg_list = get_msg_list(result)
           url_array << msg_list[index]['app_msg_ext_info']['content_url'].gsub('amp;', '') if msg_list[index]['app_msg_ext_info']
         end
